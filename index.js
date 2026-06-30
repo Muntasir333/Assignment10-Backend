@@ -23,6 +23,16 @@ async function run() {
     const collection = db.collection("requests");
      const fundsCollection = db.collection("funds");
 
+     app.get('/users', async (req, res) => {
+        const users = await db.collection('user').find().toArray();
+        res.json(users);
+    });
+
+    app.get('/my-requests', async (req, res) => { 
+      const requests = await collection.find().toArray();
+      res.json(requests);
+    });
+
     app.post('/add-request', async (req, res) => {
     const request = req.body;
     request.createdAt = new Date();
