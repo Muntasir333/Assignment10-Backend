@@ -239,7 +239,7 @@ app.patch('/blood-requests/:id', verifyToken, async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-app.get('/api/profile', verifyToken, async (req, res) => {
+app.get('/api/profile', async (req, res) => {
   try {
     const userEmail = req.query.email; 
 
