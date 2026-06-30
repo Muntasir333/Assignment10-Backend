@@ -33,6 +33,58 @@ async function run() {
       res.json(requests);
     });
 
+    // ==========================================
+// 🤝 DONOR REGISTRY INTENT SUBMISSION ROUTE
+// ==========================================
+
+// This handles the PATCH call when a donor volunteers via the modal card
+app.patch('/my-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, donorDetails, requestedByRole } = req.body;
+
+    // 1. Check if this is an Admin/Volunteer update action OR a Donor volunteering action
+    // If donorDetails exists, it's a regular user applying through the modal card
+    if (donorDetails) {
+      const result = await db.collection("requests").updateOne(
+        { _id: new ObjectId(id) },
+        { 
+          $set: { 
+            status: status || 'pending_donor', // Updates status flag
+            donorDetails: {
+              name: donorDetails.name,
+              phone: donorDetails.phone,
+              appliedAt: new Date(donorDetails.appliedAt)
+            }
+          } 
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: "Blood request document identity not found." });
+      }
+
+      return res.status(200).json({ message: "Donation intent captured successfully!", result });
+    }
+
+    // 2. Fallback: If no donorDetails, handle your existing Admin/Volunteer panel state changes
+    if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
+      return res.status(403).json({ message: "Forbidden: Unauthorized modification trace." });
+    }
+
+    const adminResult = await db.collection("requests").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+
+    return res.json({ message: "Status updated successfully by management", adminResult });
+
+  } catch (error) {
+    console.error("Error processing request patch:", error);
+    res.status(500).json({ message: "Internal server registry mutation error" });
+  }
+});
+
     app.post('/add-request', async (req, res) => {
     const request = req.body;
     request.createdAt = new Date();
