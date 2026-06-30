@@ -21,6 +21,7 @@ async function run() {
   try {
      const db = client.db("bloody");
     const collection = db.collection("requests");
+     const fundsCollection = db.collection("funds");
 
     app.post('/add-request', async (req, res) => {
     const request = req.body;
@@ -34,7 +35,32 @@ async function run() {
     const requests = await collection.find({ requesterEmail: email }).toArray();
     res.json(requests);
 });
-    // Connect the client to the server	(optional starting in v4.7)
+
+app.get('/api-funds', async (req, res) => {
+    const funds = await fundsCollection.find().toArray();
+    res.json(funds);
+});
+// Inside your Express app (e.g., server.js or routes/user.js)
+// Running on http://localhost:5000
+
+app.get('/api/profile', async (req, res) => {
+  try {
+    const userEmail = req.query.email; 
+
+    if (!userEmail) {
+      return res.status(400).json({ message: "Email query parameter is required" });
+    }
+    const userProfile = await db.collection('user').findOne({ email: userEmail });
+
+    if (!userProfile) {
+      return res.status(404).json({ message: "User profile registry not found" });
+    }
+    return res.status(200).json(userProfile);
+  } catch (error) {
+    console.error("Backend profile route error:", error);
+    return res.status(500).json({ message: "Internal server registry error" });
+  }
+});
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
