@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 const app = express();
@@ -16,6 +17,9 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
+);
 const verifyToken = async (req, res, next) => {
   const header = req.headers['authorization'];
 
@@ -128,7 +132,7 @@ app.get('/blood-requests', async (req, res) => {
   }
 });
 
-    app.post('/add-request', async (req, res) => {
+    app.post('/add-request', verifyToken, async (req, res) => {
     const request = req.body;
     request.createdAt = new Date();
     const result = await collection.insertOne(request);
