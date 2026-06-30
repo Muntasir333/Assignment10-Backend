@@ -16,6 +16,28 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+const verifyToken = async (req, res, next) => {
+  const header = req.headers['authorization'];
+
+  if (!header) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const token = header.split(" ")[1]; 
+
+    const { payload } = await jwtVerify(token, JWKS);
+
+    console.log("PAYLOAD:", payload);
+
+    req.user = payload; 
+
+    next();
+  } catch (error) {
+    console.log("JWT ERROR:", error.message);
+    return res.status(401).json({ message: 'Forbidden' });
+  }
+};
 
 async function run() {
   try {
