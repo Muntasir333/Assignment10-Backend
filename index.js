@@ -194,8 +194,52 @@ app.delete('/my-requests/:id', async (req, res) => {
 });
 // Inside your Express app (e.g., server.js or routes/user.js)
 // Running on http://localhost:5000
+app.patch('/blood-requests/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, donorDetails, requestedByRole } = req.body;
 
-app.get('/api/profile', async (req, res) => {
+    // Donor volunteering through the modal card
+    if (donorDetails) {
+      const result = await collection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            status: status || 'pending_donor',
+            donorDetails: {
+              name: donorDetails.name,
+              phone: donorDetails.phone,
+              appliedAt: new Date(donorDetails.appliedAt)
+            }
+          }
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: "Blood request not found." });
+      }
+
+      return res.status(200).json({ message: "Donation intent captured successfully!", result });
+    }
+
+    // Admin/Volunteer status change
+    if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
+      return res.status(403).json({ message: "Forbidden: Unauthorized modification." });
+    }
+
+    const adminResult = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+
+    return res.json({ message: "Status updated successfully by management", adminResult });
+
+  } catch (error) {
+    console.error("Error processing blood-requests patch:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+app.get('/api/profile', verifyToken, async (req, res) => {
   try {
     const userEmail = req.query.email; 
 
