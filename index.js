@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 const app = express();
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
@@ -49,6 +49,49 @@ async function run() {
 app.get('/api-funds', async (req, res) => {
     const funds = await fundsCollection.find().toArray();
     res.json(funds);
+});
+// ==========================================
+// 🩸 BLOOD REQUESTS PROTECTION ROUTES
+// ==========================================
+
+// 🌟 UPDATED: Allows BOTH Admin and Volunteer to change request status
+app.patch('/my-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, requestedByRole } = req.body; // Capture role passed from frontend body payload
+
+    // 🛡️ Guardrail check: If they aren't an admin or a volunteer, block them from updating status
+    if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
+      return res.status(403).json({ message: "Forbidden: Only admins and volunteers can update statuses." });
+    }
+
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+    
+    res.json({ message: "Status updated successfully", result });
+  } catch (error) {
+    res.status(500).json({ message: "Error mutating blood request state" });
+  }
+});
+
+// 🛡️ STRICT GUARD: Explicitly blocks volunteers and donors from deleting registries
+app.delete('/my-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.query; // Capture role passed from frontend queries
+
+    // Lock down deletions strictly to 'admin' roles only
+    if (role !== 'admin') {
+      return res.status(403).json({ message: "Forbidden: Volunteers and donors do not have deletion privileges." });
+    }
+
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting blood request doc" });
+  }
 });
 // Inside your Express app (e.g., server.js or routes/user.js)
 // Running on http://localhost:5000
