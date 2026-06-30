@@ -28,10 +28,22 @@ async function run() {
         res.json(users);
     });
 
-    app.get('/my-requests', async (req, res) => { 
-      const requests = await collection.find().toArray();
-      res.json(requests);
-    });
+   app.get('/my-requests', async (req, res) => {
+  try {
+    const { email } = req.query; // 🌟 Capture the email query parameter from the frontend
+
+    if (!email) {
+      return res.status(400).json({ message: "Requester email is required for isolation logic." });
+    }
+
+    // 🛡️ Filter the MongoDB query so it ONLY matches documents created by this user
+    const requests = await collection.find({ requesterEmail: email }).toArray();
+    res.json(requests);
+  } catch (error) {
+    console.error("Error fetching personal donor requests:", error);
+    res.status(500).json({ message: "Error compiling personal request logs." });
+  }
+});
 
     // ==========================================
 // 🤝 DONOR REGISTRY INTENT SUBMISSION ROUTE
@@ -82,6 +94,15 @@ app.patch('/my-requests/:id', async (req, res) => {
   } catch (error) {
     console.error("Error processing request patch:", error);
     res.status(500).json({ message: "Internal server registry mutation error" });
+  }
+});
+
+app.get('/blood-requests', async (req, res) => {
+  try {
+    const requests = await collection.find().toArray();
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching global requests" });
   }
 });
 
