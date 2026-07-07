@@ -70,12 +70,17 @@ async function run() {
     res.status(500).json({ message: "Error compiling personal request logs." });
   }
 });
-
-    // ==========================================
-// 🤝 DONOR REGISTRY INTENT SUBMISSION ROUTE
-// ==========================================
-
-// This handles the PATCH call when a donor volunteers via the modal card
+app.post('/api/fundings', async (req, res) => {
+  try {
+    const fundingData = req.body;
+    fundingData.createdAt = new Date();
+    const result = await fundsCollection.insertOne(fundingData);
+    res.status(201).json({ message: "Funding request submitted successfully!", result });
+  } catch (error) {
+    console.error("Error submitting funding request:", error);
+    res.status(500).json({ message: "Internal server error while submitting funding request." });
+  }
+});
 app.patch('/my-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,8 +130,12 @@ app.patch('/my-requests/:id', async (req, res) => {
 
 app.get('/blood-requests', async (req, res) => {
   try {
-    const requests = await collection.find().toArray();
-    res.json(requests);
+    const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+    const skip = (Number(page) - 1) * Number(limit);
+    const requests = await collection.find().skip(skip).limit(Number(limit)).toArray();
+    const totalRequests = await collection.countDocuments();
+    const totalPages = Math.ceil(totalRequests / Number(limit));
+    res.json({ requests, totalRequests, totalPages });
   } catch (error) {
     res.status(500).json({ message: "Error fetching global requests" });
   }
@@ -145,15 +154,11 @@ app.get('/blood-requests', async (req, res) => {
     res.json(requests);
 });
 
-app.get('/api-funds', async (req, res) => {
-    const funds = await fundsCollection.find().toArray();
-    res.json(funds);
+app.get('/api-funds', async(req,res)=>{
+   const funds = await fundsCollection.find().toArray();
+   res.json(funds);
 });
-// ==========================================
-// 🩸 BLOOD REQUESTS PROTECTION ROUTES
-// ==========================================
 
-// 🌟 UPDATED: Allows BOTH Admin and Volunteer to change request status
 app.patch('/my-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
