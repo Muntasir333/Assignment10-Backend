@@ -62,13 +62,11 @@ async function run() {
 
    app.get('/my-requests', async (req, res) => {
   try {
-    const { email } = req.query; // 🌟 Capture the email query parameter from the frontend
+    const { email } = req.query;
 
     if (!email) {
       return res.status(400).json({ message: "Requester email is required for isolation logic." });
     }
-
-    // 🛡️ Filter the MongoDB query so it ONLY matches documents created by this user
     const requests = await collection.find({ requesterEmail: email }).toArray();
     res.json(requests);
   } catch (error) {
@@ -92,14 +90,12 @@ app.patch('/my-requests/:id', async (req, res) => {
     const { id } = req.params;
     const { status, donorDetails, requestedByRole } = req.body;
 
-    // 1. Check if this is an Admin/Volunteer update action OR a Donor volunteering action
-    // If donorDetails exists, it's a regular user applying through the modal card
     if (donorDetails) {
       const result = await db.collection("requests").updateOne(
         { _id: new ObjectId(id) },
         { 
           $set: { 
-            status: status || 'pending_donor', // Updates status flag
+            status: status || 'pending_donor', 
             donorDetails: {
               name: donorDetails.name,
               phone: donorDetails.phone,
@@ -116,7 +112,6 @@ app.patch('/my-requests/:id', async (req, res) => {
       return res.status(200).json({ message: "Donation intent captured successfully!", result });
     }
 
-    // 2. Fallback: If no donorDetails, handle your existing Admin/Volunteer panel state changes
     if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
       return res.status(403).json({ message: "Forbidden: Unauthorized modification trace." });
     }
@@ -177,9 +172,8 @@ app.get('/api-funds', async(req,res)=>{
 app.patch('/my-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, requestedByRole } = req.body; // Capture role passed from frontend body payload
+    const { status, requestedByRole } = req.body; 
 
-    // 🛡️ Guardrail check: If they aren't an admin or a volunteer, block them from updating status
     if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
       return res.status(403).json({ message: "Forbidden: Only admins and volunteers can update statuses." });
     }
@@ -195,13 +189,11 @@ app.patch('/my-requests/:id', async (req, res) => {
   }
 });
 
-// 🛡️ STRICT GUARD: Explicitly blocks volunteers and donors from deleting registries
 app.delete('/my-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { role } = req.query; // Capture role passed from frontend queries
+    const { role } = req.query; 
 
-    // Lock down deletions strictly to 'admin' roles only
     if (role !== 'admin') {
       return res.status(403).json({ message: "Forbidden: Volunteers and donors do not have deletion privileges." });
     }
@@ -212,14 +204,11 @@ app.delete('/my-requests/:id', async (req, res) => {
     res.status(500).json({ message: "Error deleting blood request doc" });
   }
 });
-// Inside your Express app (e.g., server.js or routes/user.js)
-// Running on http://localhost:5000
-app.patch('/blood-requests/:id', verifyToken, async (req, res) => {
+app.patch('/blood-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { status, donorDetails, requestedByRole } = req.body;
 
-    // Donor volunteering through the modal card
     if (donorDetails) {
       const result = await collection.updateOne(
         { _id: new ObjectId(id) },
@@ -242,7 +231,6 @@ app.patch('/blood-requests/:id', verifyToken, async (req, res) => {
       return res.status(200).json({ message: "Donation intent captured successfully!", result });
     }
 
-    // Admin/Volunteer status change
     if (requestedByRole !== 'admin' && requestedByRole !== 'volunteer') {
       return res.status(403).json({ message: "Forbidden: Unauthorized modification." });
     }
