@@ -6,7 +6,13 @@ const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://bloody-rho.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json())
 const port = process.env.PORT || 5000;
 
