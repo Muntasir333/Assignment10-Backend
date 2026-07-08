@@ -189,7 +189,7 @@ app.patch('/my-requests/:id', async (req, res) => {
   }
 });
 
-app.delete('/my-requests/:id', async (req, res) => {
+app.delete('/blood-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.query; 
