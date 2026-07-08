@@ -137,6 +137,11 @@ app.patch('/my-requests/:id', async (req, res) => {
 app.get('/blood-requests', async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10 if not provided
+     if (!page || !limit) {
+      const requests = await collection.find().toArray();
+
+      return res.json(requests);
+    }
     const skip = (Number(page) - 1) * Number(limit);
     const requests = await collection.find().skip(skip).limit(Number(limit)).toArray();
     const totalRequests = await collection.countDocuments();
