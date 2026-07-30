@@ -154,19 +154,30 @@ app.delete('/donation-requests/:id', async (req, res) => {
 app.patch('/donation-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedData = req.body;
+    const updatedData = { ...req.body };
 
-    // Optional: Remove _id if passed in body to prevent MongoDB immutable field errors
+    if (!id || !ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid Request ID format." });
+    }
+
+    // 🚨 Strip immutable database fields to prevent MongoDB update errors
     delete updatedData._id;
+    delete updatedData.createdAt;
+    delete updatedData.updatedAt;
 
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
       { $set: updatedData }
     );
 
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Donation request not found." });
+    }
+
     res.status(200).json({ message: "Updated successfully", result });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update donation request" });
+    console.error("Update error:", error.message);
+    res.status(500).json({ message: `Failed to update donation request: ${error.message}` });
   }
 });
 
