@@ -129,6 +129,21 @@ app.patch('/my-requests/:id', async (req, res) => {
   }
 });
 
+// DELETE a request by ID
+app.delete('/donation-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await DonationRequestCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    res.status(200).json({ message: "Request deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete request" });
+  }
+});
 
 app.get('/blood-requests', async (req, res) => {
   try {
