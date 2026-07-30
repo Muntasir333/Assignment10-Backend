@@ -181,6 +181,27 @@ app.patch('/donation-requests/:id', async (req, res) => {
   }
 });
 
+app.get('/donation-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || !ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid Request ID format." });
+    }
+
+    const request = await collection.findOne({ _id: new ObjectId(id) });
+
+    if (!request) {
+      return res.status(404).json({ message: "Donation request not found." });
+    }
+
+    res.status(200).json(request);
+  } catch (error) {
+    console.error("Error fetching request details:", error);
+    res.status(500).json({ message: "Failed to fetch request details." });
+  }
+});
+
 app.get('/blood-requests', async (req, res) => {
   try {
     if (!req.query.page && !req.query.limit) {
