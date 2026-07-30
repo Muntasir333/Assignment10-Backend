@@ -130,29 +130,25 @@ app.patch('/my-requests/:id', async (req, res) => {
 });
 
 app.delete('/donation-requests/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
+      try {
+        const { id } = req.params;
 
-    // 1. Check if ID is a valid 24-character MongoDB ObjectId
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid Request ID format." });
-    }
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({ message: "Invalid Request ID format." });
+        }
 
-    // 2. Perform deletion
-    const result = await donationRequestCollection.deleteOne({ 
-      _id: new ObjectId(id) 
+        const result = await donationRequestCollection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Donation request not found." });
+        }
+
+        res.status(200).json({ message: "Request deleted successfully." });
+      } catch (error) {
+        console.error("Error deleting request:", error);
+        res.status(500).json({ message: "Failed to delete donation request." });
+      }
     });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Donation request not found." });
-    }
-
-    return res.status(200).json({ message: "Request deleted successfully." });
-  } catch (error) {
-    console.error("Delete route error:", error);
-    return res.status(500).json({ message: "Server error during deletion." });
-  }
-});
 
 app.get('/blood-requests', async (req, res) => {
   try {
