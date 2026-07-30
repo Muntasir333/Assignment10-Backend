@@ -151,6 +151,25 @@ app.delete('/donation-requests/:id', async (req, res) => {
   }
 });
 
+app.patch('/donation-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    // Optional: Remove _id if passed in body to prevent MongoDB immutable field errors
+    delete updatedData._id;
+
+    const result = await DonationRequestCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedData }
+    );
+
+    res.status(200).json({ message: "Updated successfully", result });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update donation request" });
+  }
+});
+
 app.get('/blood-requests', async (req, res) => {
   try {
     if (!req.query.page && !req.query.limit) {
