@@ -130,25 +130,35 @@ app.patch('/my-requests/:id', async (req, res) => {
 });
 
 app.delete('/donation-requests/:id', async (req, res) => {
-      try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({ message: "Invalid Request ID format." });
-        }
+    if (!id) {
+      return res.status(400).json({ message: "Request ID is required." });
+    }
 
-        const result = await donationRequestCollection.deleteOne({ _id: new ObjectId(id) });
+    // Build query safely without crashing
+    let query;
+    if (ObjectId.isValid(id)) {
+      // Handles standard MongoDB ObjectIds
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] };
+    } else {
+      // Handles custom string IDs safely
+      query = { _id: id };
+    }
 
-        if (result.deletedCount === 0) {
-          return res.status(404).json({ message: "Donation request not found." });
-        }
+    const result = await donationRequestCollection.deleteOne(query);
 
-        res.status(200).json({ message: "Request deleted successfully." });
-      } catch (error) {
-        console.error("Error deleting request:", error);
-        res.status(500).json({ message: "Failed to delete donation request." });
-      }
-    });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Donation request not found in database." });
+    }
+
+    return res.status(200).json({ message: "Request deleted successfully." });
+  } catch (error) {
+    console.error("Delete Route Error:", error.message);
+    return res.status(500).json({ message: "Server error while deleting request." });
+  }
+});
 
 app.get('/blood-requests', async (req, res) => {
   try {
