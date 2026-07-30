@@ -133,30 +133,21 @@ app.delete('/donation-requests/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ message: "Request ID is required." });
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid Request ID format." });
     }
 
-    // Build query safely without crashing
-    let query;
-    if (ObjectId.isValid(id)) {
-      // Handles standard MongoDB ObjectIds
-      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] };
-    } else {
-      // Handles custom string IDs safely
-      query = { _id: id };
-    }
-
-    const result = await donationRequestCollection.deleteOne(query);
+    // Notice we are using 'collection' here!
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Donation request not found in database." });
+      return res.status(404).json({ message: "Donation request not found." });
     }
 
-    return res.status(200).json({ message: "Request deleted successfully." });
+    res.status(200).json({ message: "Request deleted successfully." });
   } catch (error) {
-    console.error("Delete Route Error:", error.message);
-    return res.status(500).json({ message: "Server error while deleting request." });
+    console.error("Error deleting request:", error);
+    res.status(500).json({ message: "Failed to delete donation request." });
   }
 });
 
