@@ -159,7 +159,7 @@ app.patch('/donation-requests/:id', async (req, res) => {
     // Optional: Remove _id if passed in body to prevent MongoDB immutable field errors
     delete updatedData._id;
 
-    const result = await DonationRequestCollection.updateOne(
+    const result = await collection.updateOne(
       { _id: new ObjectId(id) },
       { $set: updatedData }
     );
